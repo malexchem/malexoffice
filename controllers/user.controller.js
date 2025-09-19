@@ -38,14 +38,43 @@ exports.update = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-exports.createByAdmin = async (req, res, next) => {
+/*exports.createByAdmin = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
     if (await User.findOne({ email })) return res.status(400).send({ error: 'Email already in use' });
     const user = await User.create({ name, email, password, role: roleUtil(role) });
     res.status(201).send({ user });
   } catch (e) { next(e); }
+};*/
+
+exports.createByAdmin = async (req, res, next) => {
+  try {
+    const { name, email, password, role } = req.body;
+
+    console.log(`[INFO] Admin request to create user: ${email}`);
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      console.warn(`[WARN] Failed to create user - email already in use: ${email}`);
+      return res.status(400).send({ error: 'Email already in use!!!' });
+    }
+
+    const user = await User.create({ 
+      name, 
+      email, 
+      password, 
+      role: roleUtil(role) 
+    });
+
+    console.log(`[SUCCESS] User created by admin: ID=${user._id}, Email=${user.email}`);
+    res.status(201).send({ user });
+
+  } catch (e) {
+    console.error(`[ERROR] Failed to create user by admin: ${e.message}`);
+    next(e);
+  }
 };
+
 
 exports.updatePassword = async (req, res, next) => {
   try {
