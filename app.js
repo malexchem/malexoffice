@@ -9,7 +9,7 @@ const config = require('./config');
 const connectDB = require('./db');
 const errorHandler = require('./middleware/errorHandler');
 const User = require('./models/user');
-const roleUtil = require('./utils/roleUtil'); // if you have this util
+const roleUtil = require('./utils/role'); // if you have this util
 
 const app = express();
 
@@ -56,6 +56,7 @@ app.post('/api/users/createByAdmin', async (req, res, next) => {
 });
 
 /* ---------- other routes ---------- */
+app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/records', require('./routes/record.routes'));
 app.use('/api/expenses', require('./routes/expense.routes'));
 app.use('/api/deposits', require('./routes/deposit.routes'));
