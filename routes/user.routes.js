@@ -4,7 +4,7 @@ const ctrl = require('../controllers/user.controller');
 const adminOnly = require('../middleware/adminOnly');
 const userController = require('../controllers/userController');
 const { userRegisterValidator } = require('../middleware/validators');
-const ctrl = require('../controllers/auth.controller');
+const ctrll = require('../controllers/auth.controller');
 
 router.get('/email/:email', ctrl.getByEmail);
 router.get('/:id',  adminOnly, ctrl.getById);
@@ -16,8 +16,8 @@ router.post('/updatePassword',  ctrl.updatePassword);
 router.post('/register', userRegisterValidator, userController.registerUser);
 
 
-router.post('/register', ctrl.register);
-router.post('/login', ctrl.login);
+router.post('/register', ctrll.register);
+router.post('/login', ctrll.login);
 //router.post('/logout', require('../middleware/auth'), ctrl.logout);
 
 module.exports = router;
