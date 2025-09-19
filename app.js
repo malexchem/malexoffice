@@ -12,6 +12,13 @@ const app = express();
 app.use(cors(config.CORS_OPTIONS));
 app.use(bodyParser.json({ limit: config.BODY_LIMIT }));
 
+// Log every incoming request
+app.use((req, res, next) => {
+  const now = new Date().toISOString();
+  console.log(`[REQUEST] ${now} | ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 /* ---------- routes ---------- */
 app.use('/api/users', require('./routes/auth.routes'));
 app.use('/api/users', require('./routes/user.routes'));
