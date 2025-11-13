@@ -43,9 +43,18 @@ exports.sync = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-exports.getAll = async (req, res, next) => {
+/*exports.getAll = async (req, res, next) => {
   try { res.send(await Record.find()); } catch (e) { next(e); }
+};*/
+exports.getAll = async (req, res, next) => {
+  try {
+    const records = await Record.find().sort({ date: -1 }); // 👈 sort by date descending
+    res.send(records);
+  } catch (e) {
+    next(e);
+  }
 };
+
 
 exports.update = async (req, res, next) => {
   try {
