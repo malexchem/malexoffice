@@ -1,4 +1,5 @@
 const Record = require('../models/record');
+const { DateTime } = require('luxon');
 
 exports.sync = async (req, res, next) => {
   try {
@@ -45,11 +46,38 @@ exports.sync = async (req, res, next) => {
 
 /*exports.getAll = async (req, res, next) => {
   try { res.send(await Record.find()); } catch (e) { next(e); }
-};*/
+};
 exports.getAll = async (req, res, next) => {
   try {
     const records = await Record.find().sort({ date: -1 }); // 👈 sort by date descending
     res.send(records);
+  } catch (e) {
+    next(e);
+  }
+};*/
+
+exports.getAll = async (req, res, next) => {
+  try {
+    const records = await Record.find().sort({ date: -1 }); // sorted by date descending
+
+    // Convert each record's date/time to Nairobi time
+    const recordsNairobi = records.map(r => {
+      // Combine date and time fields (assuming both are Date objects)
+      const utcDateTime = new Date(r.time); // time in UTC from DB
+
+      // Convert to Nairobi time
+      const nairobiDateTime = DateTime.fromJSDate(utcDateTime, { zone: 'utc' })
+        .setZone('Africa/Nairobi');
+
+      return {
+        ...r.toObject(), // convert mongoose doc to plain object
+        time: nairobiDateTime.toISO(),               // ISO string in Nairobi time
+        displayTime: nairobiDateTime.toFormat('LLL dd, yyyy, hh:mm a') // optional display format
+      };
+    });
+
+    res.send(recordsNairobi);
+
   } catch (e) {
     next(e);
   }
