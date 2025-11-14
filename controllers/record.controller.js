@@ -137,7 +137,7 @@ exports.getAll = async (req, res, next) => {
 };
 
 
-exports.update = async (req, res, next) => {
+/*exports.update = async (req, res, next) => {
   try {
     const upd = req.body;
     const types = ['invoiceNo', 'cashSaleNo', 'quotationNo'].filter((k) => upd[k]);
@@ -147,6 +147,38 @@ exports.update = async (req, res, next) => {
     if (!record) return res.status(404).send({ error: 'Record not found' });
     res.send(record);
   } catch (e) { next(e); }
+};*/
+
+exports.update = async (req, res, next) => {
+  try {
+    const upd = { ...req.body };
+
+    // Validate exactly one document type
+    const types = ['invoiceNo', 'cashSaleNo', 'quotationNo'].filter(k => upd[k]);
+    if (types.length !== 1) {
+      return res.status(400).send({ error: 'Exactly one document type required' });
+    }
+
+    // Convert date + time → valid Date for Mongoose
+    if (upd.date && upd.time) {
+      upd.time = combineDateTime(upd.date, upd.time);
+    }
+
+    const record = await Record.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: upd },
+      { new: true, runValidators: true }
+    );
+
+    if (!record) {
+      return res.status(404).send({ error: 'Record not found' });
+    }
+
+    res.send(record);
+
+  } catch (e) {
+    next(e);
+  }
 };
 
 exports.remove = async (req, res, next) => {
