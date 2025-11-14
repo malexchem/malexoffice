@@ -1,5 +1,58 @@
 const Record = require('../models/record');
 const { DateTime } = require('luxon');
+const { v4: uuidv4 } = require('uuid');
+
+// Helper: convert date + time strings into proper JS Date
+function combineDateTime(dateStr, timeStr) {
+    return new Date(`${dateStr}T${timeStr}:00`);
+}
+
+exports.createRecord = async (req, res) => {
+    try {
+        const {
+            date,
+            time,
+            customerName,
+            invoiceNo,
+            cashSaleNo,
+            quotationNo,
+            facilitator,
+            amount,
+            createdBy
+        } = req.body;
+
+        const combinedDate = combineDateTime(date, time);
+
+        const newRecord = new Record({
+            id: uuidv4(),
+            date: combinedDate,
+            time: combinedDate,
+            customerName,
+            invoiceNo,
+            cashSaleNo,
+            quotationNo,
+            facilitator,
+            amount,
+            createdBy,
+            createdAt: new Date()
+        });
+
+        await newRecord.save();
+
+        res.status(201).json({
+            success: true,
+            message: "Record saved successfully",
+            data: newRecord
+        });
+
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
 
 exports.sync = async (req, res, next) => {
   try {
