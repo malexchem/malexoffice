@@ -53,6 +53,8 @@ app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/records', require('./routes/record.routes'));
 app.use('/api/expenses', require('./routes/expense.routes'));
 app.use('/api/deposits', require('./routes/deposit.routes'));
+app.use('/api/transactions', require('./routes/transaction.routes'));
+
 
 /* ---------- catch-all ---------- */
 app.use(errorHandler);
