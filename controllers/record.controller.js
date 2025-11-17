@@ -29,7 +29,7 @@ exports.createRecord = async (req, res) => {
             throw new Error("Invalid amount, must be a number");
         }
 
-        // Create new record
+        // Prepare new record
         const newRecord = new Record({
             id: uuidv4(),
             date: combinedDate,
@@ -44,6 +44,42 @@ exports.createRecord = async (req, res) => {
             createdAt: new Date()
         });
 
+        // Determine which document type is present
+        const docType =
+            invoiceNo ? 'invoiceNo' :
+            cashSaleNo ? 'cashSaleNo' :
+            quotationNo ? 'quotationNo' :
+            'none';
+
+        // Log data being sent / carried, including detected document type
+        console.log('[INFO] Record data prepared for validation:', {
+            id: newRecord.id,
+            customerName: newRecord.customerName,
+            date: newRecord.date,
+            time: newRecord.time,
+            facilitator: newRecord.facilitator,
+            amount: newRecord.amount,
+            createdBy: newRecord.createdBy,
+            invoiceNo: newRecord.invoiceNo,
+            cashSaleNo: newRecord.cashSaleNo,
+            quotationNo: newRecord.quotationNo,
+            detectedDocumentType: docType
+        });
+
+        // Validate the record before saving
+        try {
+            await newRecord.validate(); // runs schema validation and pre('validate') hooks
+            console.log('[INFO] Record validation passed ✅');
+        } catch (validationError) {
+            console.error('[FAILURE] Record validation failed ❌:', validationError.errors);
+            return res.status(400).json({
+                success: false,
+                error: validationError.message,
+                details: validationError.errors
+            });
+        }
+
+        // Save the record after validation
         await newRecord.save();
         console.log(`[SUCCESS] Record created: ${newRecord.id} (${customerName})`);
 
@@ -91,6 +127,7 @@ exports.createRecord = async (req, res) => {
         });
     }
 };
+
 /*exports.createRecord = async (req, res) => {
     try {
         const {
