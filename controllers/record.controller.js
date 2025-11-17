@@ -1,6 +1,7 @@
 const Record = require('../models/record');
 const { DateTime } = require('luxon');
 const { v4: uuidv4 } = require('uuid');
+const Transaction = require('../models/transaction');
 
 // Helper: convert date + time strings into proper JS Date
 function combineDateTime(dateStr, timeStr) {
