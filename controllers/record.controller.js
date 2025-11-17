@@ -39,21 +39,27 @@ exports.createRecord = async (req, res) => {
         });
 
         await newRecord.save();
+        console.log(`[SUCCESS] Record created: ${newRecord.id} (${customerName})`);
 
         // If it's a cash sale, also create a transaction
         if (cashSaleNo) {
-            const transaction = new Transaction({
-                type: 'income',
-                date: combinedDate,
-                description: `Cash sale from ${customerName}`,
-                category: 'sales',
-                method: 'cash',
-                amount: amount,
-                reference: cashSaleNo,
-                status: 'completed'
-            });
+            try {
+                const transaction = new Transaction({
+                    type: 'income',
+                    date: combinedDate,
+                    description: `Cash sale from ${customerName}`,
+                    category: 'sales',
+                    method: 'cash',
+                    amount: amount,
+                    reference: cashSaleNo,
+                    status: 'completed'
+                });
 
-            await transaction.save();
+                await transaction.save();
+                console.log(`[SUCCESS] Transaction created for cash sale: ${cashSaleNo} (${customerName})`);
+            } catch (txError) {
+                console.error(`[FAILURE] Creating transaction for cash sale ${cashSaleNo}:`, txError.message);
+            }
         }
 
         res.status(201).json({
@@ -63,13 +69,14 @@ exports.createRecord = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("[ERROR] Creating record:", error);
+        console.error(`[FAILURE] Creating record for customer ${req.body.customerName}:`, error.message);
         res.status(400).json({
             success: false,
             error: error.message
         });
     }
 };
+
 /*exports.createRecord = async (req, res) => {
     try {
         const {
