@@ -23,13 +23,7 @@ exports.createRecord = async (req, res) => {
 
         const combinedDate = combineDateTime(date, time);
 
-        // Ensure amount is a number
-        const parsedAmount = Number(amount);
-        if (isNaN(parsedAmount)) {
-            throw new Error("Invalid amount, must be a number");
-        }
-
-        // Prepare new record
+        // Create new record
         const newRecord = new Record({
             id: uuidv4(),
             date: combinedDate,
@@ -39,78 +33,27 @@ exports.createRecord = async (req, res) => {
             cashSaleNo,
             quotationNo,
             facilitator,
-            amount: parsedAmount,
+            amount,
             createdBy,
             createdAt: new Date()
         });
 
-        // Determine which document type is present
-        const docType =
-            invoiceNo ? 'invoiceNo' :
-            cashSaleNo ? 'cashSaleNo' :
-            quotationNo ? 'quotationNo' :
-            'none';
-
-        // Log data being sent / carried, including detected document type
-        console.log('[INFO] Record data prepared for validation:', {
-            id: newRecord.id,
-            customerName: newRecord.customerName,
-            date: newRecord.date,
-            time: newRecord.time,
-            facilitator: newRecord.facilitator,
-            amount: newRecord.amount,
-            createdBy: newRecord.createdBy,
-            invoiceNo: newRecord.invoiceNo,
-            cashSaleNo: newRecord.cashSaleNo,
-            quotationNo: newRecord.quotationNo,
-            detectedDocumentType: docType
-        });
-
-        // Validate the record before saving
-        try {
-            await newRecord.validate(); // runs schema validation and pre('validate') hooks
-            console.log('[INFO] Record validation passed ✅');
-        } catch (validationError) {
-            console.error('[FAILURE] Record validation failed ❌:', validationError.errors);
-            return res.status(400).json({
-                success: false,
-                error: validationError.message,
-                details: validationError.errors
-            });
-        }
-
-        // Save the record after validation
         await newRecord.save();
-        console.log(`[SUCCESS] Record created: ${newRecord.id} (${customerName})`);
 
         // If it's a cash sale, also create a transaction
         if (cashSaleNo) {
-            console.log('[INFO] Attempting to create transaction for cash sale:', {
-                cashSaleNo,
-                customerName,
-                amount: parsedAmount,
-                date: combinedDate
+            const transaction = new Transaction({
+                type: 'income',
+                date: combinedDate,
+                description: `Cash sale from ${customerName}`,
+                category: 'sales',
+                method: 'cash',
+                amount: amount,
+                reference: cashSaleNo,
+                status: 'completed'
             });
 
-            try {
-                const transaction = new Transaction({
-                    type: 'income',
-                    date: combinedDate,
-                    description: `Cash sale from ${customerName}`,
-                    category: 'sales',
-                    method: 'cash',
-                    amount: parsedAmount,
-                    reference: cashSaleNo,
-                    status: 'completed'
-                });
-
-                await transaction.save();
-                console.log(`[SUCCESS] Transaction created for cash sale: ${cashSaleNo} (${customerName})`);
-            } catch (txError) {
-                console.error(`[FAILURE] Creating transaction for cash sale ${cashSaleNo}:`, txError);
-            }
-        } else {
-            console.warn('[INFO] cashSaleNo not provided, skipping transaction creation.');
+            await transaction.save();
         }
 
         res.status(201).json({
@@ -120,7 +63,7 @@ exports.createRecord = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(`[FAILURE] Creating record for customer ${req.body.customerName || 'N/A'}:`, error);
+        console.error("[ERROR] Creating record:", error);
         res.status(400).json({
             success: false,
             error: error.message
