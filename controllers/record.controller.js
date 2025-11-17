@@ -23,6 +23,12 @@ exports.createRecord = async (req, res) => {
 
         const combinedDate = combineDateTime(date, time);
 
+        // Ensure amount is a number
+        const parsedAmount = Number(amount);
+        if (isNaN(parsedAmount)) {
+            throw new Error("Invalid amount, must be a number");
+        }
+
         // Create new record
         const newRecord = new Record({
             id: uuidv4(),
@@ -33,7 +39,7 @@ exports.createRecord = async (req, res) => {
             cashSaleNo,
             quotationNo,
             facilitator,
-            amount,
+            amount: parsedAmount,
             createdBy,
             createdAt: new Date()
         });
@@ -43,6 +49,13 @@ exports.createRecord = async (req, res) => {
 
         // If it's a cash sale, also create a transaction
         if (cashSaleNo) {
+            console.log('[INFO] Attempting to create transaction for cash sale:', {
+                cashSaleNo,
+                customerName,
+                amount: parsedAmount,
+                date: combinedDate
+            });
+
             try {
                 const transaction = new Transaction({
                     type: 'income',
@@ -50,7 +63,7 @@ exports.createRecord = async (req, res) => {
                     description: `Cash sale from ${customerName}`,
                     category: 'sales',
                     method: 'cash',
-                    amount: amount,
+                    amount: parsedAmount,
                     reference: cashSaleNo,
                     status: 'completed'
                 });
@@ -58,8 +71,10 @@ exports.createRecord = async (req, res) => {
                 await transaction.save();
                 console.log(`[SUCCESS] Transaction created for cash sale: ${cashSaleNo} (${customerName})`);
             } catch (txError) {
-                console.error(`[FAILURE] Creating transaction for cash sale ${cashSaleNo}:`, txError.message);
+                console.error(`[FAILURE] Creating transaction for cash sale ${cashSaleNo}:`, txError);
             }
+        } else {
+            console.warn('[INFO] cashSaleNo not provided, skipping transaction creation.');
         }
 
         res.status(201).json({
@@ -69,14 +84,13 @@ exports.createRecord = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(`[FAILURE] Creating record for customer ${req.body.customerName}:`, error.message);
+        console.error(`[FAILURE] Creating record for customer ${req.body.customerName || 'N/A'}:`, error);
         res.status(400).json({
             success: false,
             error: error.message
         });
     }
 };
-
 /*exports.createRecord = async (req, res) => {
     try {
         const {
