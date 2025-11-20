@@ -255,13 +255,28 @@ exports.update = async (req, res, next) => {
     const upd = { ...req.body };
 
     // Validate exactly one document type
-    const types = ['invoiceNo', 'cashSaleNo', 'quotationNo'].filter(k => upd[k]);
-    console.log("Detected document types:", types);
+    const docTypes = ['invoiceNo', 'cashSaleNo', 'quotationNo'];
+    const activeTypes = docTypes.filter(k => upd[k]);
 
-    if (types.length !== 1) {
+    console.log("Detected document types:", activeTypes);
+
+    if (activeTypes.length !== 1) {
       console.log("❌ Validation failed: Incorrect document type count");
       return res.status(400).send({ error: 'Exactly one document type required' });
     }
+
+    // 🔥 Enforce only ONE type by clearing others
+    docTypes.forEach(type => {
+      if (!upd[type]) {
+        upd[type] = null; // remove all non-selected types
+      }
+    });
+
+    console.log("✔ Cleaned document types:", {
+      invoiceNo: upd.invoiceNo,
+      cashSaleNo: upd.cashSaleNo,
+      quotationNo: upd.quotationNo
+    });
 
     // Convert date + time → valid Date for Mongoose
     if (upd.date && upd.time) {
@@ -291,6 +306,7 @@ exports.update = async (req, res, next) => {
     next(e);
   }
 };
+
 
 
 exports.remove = async (req, res, next) => {
