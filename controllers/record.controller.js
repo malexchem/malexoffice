@@ -213,7 +213,7 @@ exports.getAll = async (req, res, next) => {
   } catch (e) { next(e); }
 };*/
 
-exports.update = async (req, res, next) => {
+/*exports.update = async (req, res, next) => {
   try {
     const upd = { ...req.body };
 
@@ -243,7 +243,55 @@ exports.update = async (req, res, next) => {
   } catch (e) {
     next(e);
   }
+};*/
+
+exports.update = async (req, res, next) => {
+  try {
+
+    console.log("📥 Incoming UPDATE request...");
+    console.log("Params ID:", req.params.id);
+    console.log("Body:", req.body);
+
+    const upd = { ...req.body };
+
+    // Validate exactly one document type
+    const types = ['invoiceNo', 'cashSaleNo', 'quotationNo'].filter(k => upd[k]);
+    console.log("Detected document types:", types);
+
+    if (types.length !== 1) {
+      console.log("❌ Validation failed: Incorrect document type count");
+      return res.status(400).send({ error: 'Exactly one document type required' });
+    }
+
+    // Convert date + time → valid Date for Mongoose
+    if (upd.date && upd.time) {
+      console.log("⏱ Combining date + time:", upd.date, upd.time);
+      upd.time = combineDateTime(upd.date, upd.time);
+      console.log("⏱ Final combined Date:", upd.time);
+    }
+
+    console.log("🔄 Attempting DB update...");
+
+    const record = await Record.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: upd },
+      { new: true, runValidators: true }
+    );
+
+    if (!record) {
+      console.log("❌ Update failed: Record not found");
+      return res.status(404).send({ error: 'Record not found' });
+    }
+
+    console.log("✅ Record updated successfully:", record);
+    res.send(record);
+
+  } catch (e) {
+    console.log("💥 ERROR during update:", e.message || e);
+    next(e);
+  }
 };
+
 
 exports.remove = async (req, res, next) => {
   try {
