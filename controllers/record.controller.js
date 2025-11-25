@@ -1,4 +1,80 @@
 const Record = require('../models/record');
+const { v4: uuidv4 } = require('uuid');
+const Transaction = require('../models/transaction');
+const { DateTime } = require('luxon');
+
+// Helper: combine date + time strings into UTC Date
+function combineDateTimeUTC(dateStr, timeStr) {
+    // Parse the input as Kenya time (EAT) and convert to UTC
+    return DateTime.fromISO(`${dateStr}T${timeStr}`, { zone: 'Africa/Nairobi' })
+                   .toUTC()
+                   .toJSDate();
+}
+
+exports.createRecord = async (req, res) => {
+    try {
+        const {
+            date,
+            time,
+            customerName,
+            invoiceNo,
+            cashSaleNo,
+            quotationNo,
+            facilitator,
+            amount,
+            createdBy
+        } = req.body;
+
+        const combinedDate = combineDateTimeUTC(date, time);
+
+        // Create new record
+        const newRecord = new Record({
+            id: uuidv4(),
+            date: combinedDate,
+            time: combinedDate,
+            customerName,
+            invoiceNo,
+            cashSaleNo,
+            quotationNo,
+            facilitator,
+            amount,
+            createdBy,
+            createdAt: new Date()
+        });
+
+        await newRecord.save();
+
+        // If it's a cash sale, also create a transaction
+        if (cashSaleNo) {
+            const transaction = new Transaction({
+                type: 'income',
+                date: combinedDate,
+                description: `Cash sale from ${customerName}`,
+                category: 'sales',
+                method: 'cash',
+                amount: amount,
+                reference: cashSaleNo,
+                status: 'completed'
+            });
+
+            await transaction.save();
+        }
+
+        res.status(201).json({
+            success: true,
+            message: "Record saved successfully",
+            data: newRecord
+        });
+
+    } catch (error) {
+        console.error("[ERROR] Creating record:", error);
+        res.status(400).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+/*const Record = require('../models/record');
 const { DateTime } = require('luxon');
 const { v4: uuidv4 } = require('uuid');
 const Transaction = require('../models/transaction');
@@ -69,7 +145,7 @@ exports.createRecord = async (req, res) => {
             error: error.message
         });
     }
-};
+};*/
 
 /*exports.createRecord = async (req, res) => {
     try {
