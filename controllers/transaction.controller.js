@@ -15,22 +15,29 @@ const Transaction = require('../models/transaction');
 
 exports.createTransaction = async (req, res, next) => {
     try {
-        // Convert the incoming date (or use now) to Nairobi time
         let txDate;
+
         if (req.body.date) {
-            // If frontend sends a date string
-            txDate = DateTime.fromISO(req.body.date, { zone: 'Africa/Nairobi' }).toJSDate();
+            // Parse date string in Nairobi time
+            // If frontend sends "2025-11-25", assume current time for hours/minutes
+            const now = DateTime.now().setZone('Africa/Nairobi');
+            const inputDate = DateTime.fromISO(req.body.date, { zone: 'Africa/Nairobi' });
+
+            // Combine date from input + current time
+            txDate = inputDate.set({
+                hour: now.hour,
+                minute: now.minute,
+                second: now.second
+            }).toJSDate();
         } else {
-            // If no date provided, use current Nairobi time
+            // If no date provided, just use current Nairobi time
             txDate = DateTime.now().setZone('Africa/Nairobi').toJSDate();
         }
 
-        const txData = {
+        const tx = await Transaction.create({
             ...req.body,
             date: txDate
-        };
-
-        const tx = await Transaction.create(txData);
+        });
 
         res.status(201).send({ success: true, transaction: tx });
     } catch (err) {
@@ -38,6 +45,7 @@ exports.createTransaction = async (req, res, next) => {
         next(err);
     }
 };
+
 
 
 exports.getAllTransactions = async (req, res, next) => {
