@@ -1,4 +1,4 @@
-const Transaction = require('../models/transaction');
+/*const Transaction = require('../models/transaction');
 
 exports.createTransaction = async (req, res, next) => {
     try {
@@ -8,7 +8,37 @@ exports.createTransaction = async (req, res, next) => {
         console.error("[ERROR] Creating transaction:", err.message);
         next(err);
     }
+};*/
+
+const { DateTime } = require('luxon');
+const Transaction = require('../models/transaction');
+
+exports.createTransaction = async (req, res, next) => {
+    try {
+        // Convert the incoming date (or use now) to Nairobi time
+        let txDate;
+        if (req.body.date) {
+            // If frontend sends a date string
+            txDate = DateTime.fromISO(req.body.date, { zone: 'Africa/Nairobi' }).toJSDate();
+        } else {
+            // If no date provided, use current Nairobi time
+            txDate = DateTime.now().setZone('Africa/Nairobi').toJSDate();
+        }
+
+        const txData = {
+            ...req.body,
+            date: txDate
+        };
+
+        const tx = await Transaction.create(txData);
+
+        res.status(201).send({ success: true, transaction: tx });
+    } catch (err) {
+        console.error("[ERROR] Creating transaction:", err.message);
+        next(err);
+    }
 };
+
 
 exports.getAllTransactions = async (req, res, next) => {
     try {
