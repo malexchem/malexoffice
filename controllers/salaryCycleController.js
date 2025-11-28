@@ -84,7 +84,7 @@ exports.createSalaryCycle = async (req, res) => {
       cycleName: `${monthNames[month - 1]} ${year} Salary`,
       paymentDate: new Date(paymentDate),
       employees: [],
-      processedBy: req.user.id
+      //processedBy: req.user.id
     };
     
     // Add employees to cycle
