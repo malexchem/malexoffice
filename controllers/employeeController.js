@@ -54,7 +54,7 @@ exports.createEmployee = async (req, res) => {
   try {
     const employee = await Employee.create({
       ...req.body,
-      createdBy: req.user.id
+      //createdBy: req.user.id
     });
     
     res.status(201).json({
