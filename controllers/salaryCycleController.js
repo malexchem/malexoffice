@@ -3,7 +3,7 @@ const Employee = require('../models/Employee');
 const SalaryPayment = require('../models/SalaryPayment');
 
 // Get all salary cycles
-exports.getSalaryCycles = async (req, res) => {
+/*exports.getSalaryCycles = async (req, res) => {
   try {
     const { year, status } = req.query;
     let filter = {};
@@ -20,6 +20,35 @@ exports.getSalaryCycles = async (req, res) => {
       success: true,
       count: cycles.length,
       data: cycles
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};*/
+
+// Get current active cycle
+exports.getCurrentCycle = async (req, res) => {
+  try {
+    // Find the most recent draft or processing cycle, regardless of current month
+    const cycle = await SalaryCycle.findOne({
+      status: { $in: ['draft', 'processing'] }
+    })
+    .populate('employees.employee', 'firstName lastName position paymentMethod basicSalary')
+    .sort({ year: -1, month: -1, createdAt: -1 }); // Get the most recent one
+    
+    if (!cycle) {
+      return res.status(404).json({
+        success: false,
+        error: 'No active salary cycle found'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: cycle
     });
   } catch (error) {
     res.status(500).json({
