@@ -3,7 +3,7 @@ const Employee = require('../models/Employee');
 const SalaryPayment = require('../models/SalaryPayment');
 
 // Get all salary cycles
-/*exports.getSalaryCycles = async (req, res) => {
+exports.getSalaryCycles = async (req, res) => {
   try {
     const { year, status } = req.query;
     let filter = {};
@@ -27,7 +27,7 @@ const SalaryPayment = require('../models/SalaryPayment');
       error: error.message
     });
   }
-};*/
+};
 
 // Get current active cycle
 exports.getCurrentCycle = async (req, res) => {
@@ -59,7 +59,7 @@ exports.getCurrentCycle = async (req, res) => {
 };
 
 // Get current active cycle
-exports.getCurrentCycle = async (req, res) => {
+/*exports.getCurrentCycle = async (req, res) => {
   try {
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth() + 1;
@@ -88,7 +88,7 @@ exports.getCurrentCycle = async (req, res) => {
       error: error.message
     });
   }
-};
+};*/
 
 // Create salary cycle
 exports.createSalaryCycle = async (req, res) => {
