@@ -55,6 +55,11 @@ app.use('/api/expenses', require('./routes/expense.routes'));
 app.use('/api/deposits', require('./routes/deposit.routes'));
 app.use('/api/transactions', require('./routes/transaction.routes'));
 
+/* ---------- salary routes ---------- */
+app.use('/api/employees', require('./routes/employee.routes'));
+app.use('/api/salary-cycles', require('./routes/salaryCycle.routes'));
+app.use('/api/salary-payments', require('./routes/salaryPayment.routes'));
+
 
 /* ---------- catch-all ---------- */
 app.use(errorHandler);
