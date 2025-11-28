@@ -182,7 +182,7 @@ exports.processPayroll = async (req, res) => {
           paymentMethod: entry.employee.paymentMethod,
           status: 'paid',
           paidAt: new Date(),
-          processedBy: req.user.id,
+         // processedBy: req.user.id,
           notes: entry.notes
         });
       }
