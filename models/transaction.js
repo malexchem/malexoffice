@@ -16,7 +16,7 @@ const TransactionSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        required: true
+        
     },
     method: {
         type: String,
