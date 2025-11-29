@@ -8,7 +8,7 @@ const TransactionSchema = new mongoose.Schema({
     },
     date: {
         type: Date,
-        required: true
+        required: false
     },
     description: {
         type: String,
