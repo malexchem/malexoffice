@@ -191,38 +191,40 @@ exports.getTimeSummary = async (req, res, next) => {
   }
 };
 
-// Get weekly attendance trend
 exports.getWeeklyTrend = async (req, res, next) => {
   try {
+    // 1. Get start of THIS week (Monday 00:00)
     const startOfWeek = new Date();
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    const dayOfWeek = startOfWeek.getDay();          // 0 = Sun … 6 = Sat
+    const diffToMonday = (dayOfWeek + 6) % 7;        // how many days back to Monday
+    startOfWeek.setDate(startOfWeek.getDate() - diffToMonday);
     startOfWeek.setHours(0, 0, 0, 0);
-    
+
     const weeklyData = [];
-    
-    for (let i = 0; i < 6; i++) { // Monday to Friday
+
+    // 2. Loop 7 days (Mon-Sun) – change to 5 if you want Mon-Fri only
+    for (let i = 0; i < 7; i++) {
       const day = new Date(startOfWeek);
       day.setDate(startOfWeek.getDate() + i);
-      
+
       const nextDay = new Date(day);
       nextDay.setDate(nextDay.getDate() + 1);
-      
+
       const dayRecords = await TimeRecord.find({
         date: { $gte: day, $lt: nextDay },
         sessionType: 'check-in'
       });
-      
+
       const totalEmployees = await User.countDocuments();
-      const attendanceRate = totalEmployees > 0 ? (dayRecords.length / totalEmployees) * 100 : 0;
-      
+      const attendanceRate = totalEmployees ? (dayRecords.length / totalEmployees) * 100 : 0;
+
       weeklyData.push({
         day: day.toLocaleDateString('en-US', { weekday: 'short' }),
         rate: Math.round(attendanceRate)
       });
     }
-    
+
     res.send({ weeklyTrend: weeklyData });
-    
   } catch (error) {
     console.error(`[ERROR] Failed to generate weekly trend: ${error.message}`);
     next(error);
