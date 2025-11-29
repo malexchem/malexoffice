@@ -200,7 +200,7 @@ exports.getWeeklyTrend = async (req, res, next) => {
     
     const weeklyData = [];
     
-    for (let i = 0; i < 5; i++) { // Monday to Friday
+    for (let i = 0; i < 6; i++) { // Monday to Friday
       const day = new Date(startOfWeek);
       day.setDate(startOfWeek.getDate() + i);
       
