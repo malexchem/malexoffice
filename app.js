@@ -60,6 +60,9 @@ app.use('/api/employees', require('./routes/employee.routes'));
 app.use('/api/salary-cycles', require('./routes/salaryCycle.routes'));
 app.use('/api/salary-payments', require('./routes/salaryPayment.routes'));
 
+/* ---------- time management routes ---------- */
+app.use('/api/time-records', require('./routes/timeRecord.routes'));
+
 
 /* ---------- catch-all ---------- */
 app.use(errorHandler);
