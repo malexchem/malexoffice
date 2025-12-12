@@ -173,7 +173,7 @@ exports.getAll = async (req, res, next) => {
   }
 };*/
 
-exports.getAll = async (req, res, next) => {
+/*exports.getAll = async (req, res, next) => {
   try {
     const records = await Record.find().sort({ date: -1 }); // sorted by date descending
 
@@ -198,7 +198,32 @@ exports.getAll = async (req, res, next) => {
   } catch (e) {
     next(e);
   }
+};*/
+
+exports.getAll = async (req, res, next) => {
+  try {
+    // STRICT ORDER: newest record first based on actual event time
+    const records = await Record.find().sort({ time: -1 });
+
+    const recordsNairobi = records.map(r => {
+      const utcDateTime = new Date(r.time);
+
+      const nairobiDateTime = DateTime.fromJSDate(utcDateTime, { zone: 'utc' })
+        .setZone('Africa/Nairobi');
+
+      return {
+        ...r.toObject(),
+        time: nairobiDateTime.toISO(),
+        displayTime: nairobiDateTime.toFormat('LLL dd, yyyy, hh:mm a')
+      };
+    });
+
+    res.send(recordsNairobi);
+  } catch (e) {
+    next(e);
+  }
 };
+
 
 
 /*exports.update = async (req, res, next) => {
