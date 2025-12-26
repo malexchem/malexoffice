@@ -200,7 +200,7 @@ exports.getAll = async (req, res, next) => {
   }
 };*/
 
-exports.getAll = async (req, res, next) => {
+/*exports.getAll = async (req, res, next) => {
   try {
     // STRICT ORDER: newest record first based on actual event time
     const records = await Record.find().sort({ time: -1 });
@@ -222,7 +222,38 @@ exports.getAll = async (req, res, next) => {
   } catch (e) {
     next(e);
   }
+};*/
+
+exports.getAll = async (req, res, next) => {
+  try {
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const skip = (page - 1) * limit;
+
+    const [records, total] = await Promise.all([
+      Record.find()
+        .sort({ time: -1 })
+        .skip(skip)
+        .limit(limit),
+      Record.countDocuments()
+    ]);
+
+    const hasMore = skip + records.length < total;
+
+    res.json({
+      success: true,
+      page,
+      limit,
+      total,
+      hasMore,
+      data: records
+    });
+
+  } catch (e) {
+    next(e);
+  }
 };
+
 
 
 
