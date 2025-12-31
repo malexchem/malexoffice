@@ -1,6 +1,3 @@
-
-
-
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -14,7 +11,6 @@ const roleUtil = require('./utils/role'); // if you have this util
 const app = express();
 
 /* ---------- middleware ---------- */
-//app.use(cors(config.CORS_OPTIONS));
 app.use(cors());
 
 app.use(bodyParser.json({ limit: config.BODY_LIMIT }));
@@ -68,6 +64,7 @@ app.use('/api/marketer-reports', require('./routes/marketerReport.routes'));
 
 /* ---------- time management routes ---------- */
 app.use('/api/time-records', require('./routes/timeRecord.routes'));
+app.use('/api/sales', require('./routes/sales.routes'));
 
 
 /* ---------- catch-all ---------- */
