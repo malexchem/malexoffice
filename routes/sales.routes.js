@@ -159,7 +159,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update a sale (for accounting purposes)
-router.put('/:id', async (req, res) => {
+/*router.put('/:id', async (req, res) => {
   try {
     const updates = req.body;
     
@@ -194,10 +194,69 @@ router.put('/:id', async (req, res) => {
       error: error.message
     });
   }
+});*/
+
+// routes/sales.routes.js - Update the PUT endpoint
+router.put('/:id', async (req, res) => {
+  try {
+    const updates = req.body;
+    
+    // Prevent updating certain fields
+    delete updates.recordId;
+    delete updates.documentNumber;
+    delete updates.documentType;
+    
+    // Find the sale first
+    const sale = await Sales.findById(req.params.id);
+    
+    if (!sale) {
+      return res.status(404).json({
+        success: false,
+        error: 'Sales record not found'
+      });
+    }
+    
+    // Apply updates
+    Object.keys(updates).forEach(key => {
+      if (key in sale) {
+        sale[key] = updates[key];
+      }
+    });
+    
+    // Recalculate totals and status
+    sale.totalAmount = (sale.amount || 0) + (sale.taxAmount || 0) - (sale.discount || 0);
+    sale.balanceDue = sale.totalAmount - (sale.paidAmount || 0);
+    
+    // Auto-update payment status based on amounts
+    if (sale.balanceDue <= 0 && sale.totalAmount > 0) {
+      sale.paymentStatus = 'paid';
+    } else if (sale.paidAmount > 0 && sale.balanceDue > 0) {
+      sale.paymentStatus = 'partial';
+    } else if (sale.paidAmount === 0 && sale.totalAmount > 0) {
+      sale.paymentStatus = 'pending';
+    }
+    
+    sale.updatedAt = new Date();
+    
+    await sale.save();
+
+    res.json({
+      success: true,
+      message: 'Sales record updated successfully',
+      data: sale
+    });
+
+  } catch (error) {
+    console.error('[ERROR] Updating sale:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 // Update payment status
-router.patch('/:id/payment', async (req, res) => {
+/*router.patch('/:id/payment', async (req, res) => {
   try {
     const { amount, paymentMethod, paymentStatus } = req.body;
     
@@ -220,6 +279,59 @@ router.patch('/:id/payment', async (req, res) => {
     
     // Recalculate balance
     sale.balanceDue = sale.totalAmount - sale.paidAmount;
+    sale.updatedAt = new Date();
+    
+    await sale.save();
+
+    res.json({
+      success: true,
+      message: 'Payment updated successfully',
+      data: sale
+    });
+
+  } catch (error) {
+    console.error('[ERROR] Updating payment:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+});*/
+
+// routes/sales.routes.js - Update the PATCH payment endpoint
+router.patch('/:id/payment', async (req, res) => {
+  try {
+    const { amount, paymentMethod, paymentStatus } = req.body;
+    
+    const sale = await Sales.findById(req.params.id);
+    
+    if (!sale) {
+      return res.status(404).json({
+        success: false,
+        error: 'Sales record not found'
+      });
+    }
+
+    // Update payment with proper calculation
+    if (amount !== undefined) {
+      sale.paidAmount = (sale.paidAmount || 0) + parseFloat(amount);
+    }
+    
+    if (paymentMethod) sale.paymentMethod = paymentMethod;
+    if (paymentStatus) sale.paymentStatus = paymentStatus;
+    
+    // Recalculate balance
+    sale.balanceDue = sale.totalAmount - sale.paidAmount;
+    
+    // Auto-update payment status based on amounts
+    if (sale.balanceDue <= 0 && sale.totalAmount > 0) {
+      sale.paymentStatus = 'paid';
+    } else if (sale.paidAmount > 0 && sale.balanceDue > 0) {
+      sale.paymentStatus = 'partial';
+    } else if (sale.paidAmount === 0 && sale.totalAmount > 0) {
+      sale.paymentStatus = 'pending';
+    }
+    
     sale.updatedAt = new Date();
     
     await sale.save();

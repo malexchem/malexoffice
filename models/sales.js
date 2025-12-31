@@ -141,7 +141,7 @@ salesSchema.index({ paymentStatus: 1 });
 salesSchema.index({ status: 1 });
 
 // Pre-save middleware to calculate total amount
-salesSchema.pre('save', function(next) {
+/*salesSchema.pre('save', function(next) {
   // If items array exists, calculate total from items
   if (this.items && this.items.length > 0) {
     const itemsTotal = this.items.reduce((sum, item) => 
@@ -158,6 +158,40 @@ salesSchema.pre('save', function(next) {
   
   // Calculate balance due
   this.balanceDue = this.totalAmount - (this.paidAmount || 0);
+  
+  // Update updatedAt timestamp
+  this.updatedAt = new Date();
+  
+  next();
+});*/
+
+// models/sales.js - Update the pre-save middleware
+salesSchema.pre('save', function(next) {
+  // If items array exists, calculate total from items
+  if (this.items && this.items.length > 0) {
+    const itemsTotal = this.items.reduce((sum, item) => 
+      sum + (item.totalPrice || 0), 0);
+    
+    // Use items total if amount is not explicitly set
+    if (!this.amount && itemsTotal > 0) {
+      this.amount = itemsTotal;
+    }
+  }
+  
+  // Ensure total amount is calculated correctly
+  this.totalAmount = (this.amount || 0) + (this.taxAmount || 0) - (this.discount || 0);
+  
+  // Always recalculate balance due based on paid amount
+  this.balanceDue = this.totalAmount - (this.paidAmount || 0);
+  
+  // Update payment status based on amounts if not explicitly set
+  if (this.balanceDue <= 0 && this.totalAmount > 0) {
+    this.paymentStatus = 'paid';
+  } else if (this.paidAmount > 0 && this.balanceDue > 0) {
+    this.paymentStatus = 'partial';
+  } else if (this.paidAmount === 0 && this.totalAmount > 0) {
+    this.paymentStatus = 'pending';
+  }
   
   // Update updatedAt timestamp
   this.updatedAt = new Date();
