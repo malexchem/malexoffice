@@ -14,7 +14,9 @@ const roleUtil = require('./utils/role'); // if you have this util
 const app = express();
 
 /* ---------- middleware ---------- */
-app.use(cors(config.CORS_OPTIONS));
+//app.use(cors(config.CORS_OPTIONS));
+app.use(cors());
+
 app.use(bodyParser.json({ limit: config.BODY_LIMIT }));
 
 /* ---------- routes ---------- */
