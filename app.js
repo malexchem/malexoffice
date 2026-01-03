@@ -65,6 +65,8 @@ app.use('/api/marketer-reports', require('./routes/marketerReport.routes'));
 /* ---------- time management routes ---------- */
 app.use('/api/time-records', require('./routes/timeRecord.routes'));
 app.use('/api/sales', require('./routes/sales.routes'));
+// In your main app.js, add this line with other routes:
+app.use('/api/cash-collections', require('./routes/cashCollection.routes'));
 
 
 /* ---------- catch-all ---------- */
