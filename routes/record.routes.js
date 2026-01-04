@@ -6,5 +6,6 @@ router.post('/sync', ctrl.sync);
 router.get('/', ctrl.getAll);
 router.put('/:id', ctrl.update);
 router.delete('/:id', ctrl.remove);
+router.get('/summary', ctrl.getSummary);
 
 module.exports = router;

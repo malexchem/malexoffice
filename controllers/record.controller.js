@@ -450,6 +450,86 @@ exports.update = async (req, res, next) => {
   }
 };
 
+// Add this method to record.controller.js
+exports.getSummary = async (req, res) => {
+    try {
+        // Fetch all records for summary calculation
+        const records = await Record.find();
+        
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay() + 1);
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        
+        // Initialize totals
+        const totals = {
+            quotations: { daily: 0, weekly: 0, monthly: 0, yearly: 0 },
+            cashSales: { daily: 0, weekly: 0, monthly: 0, yearly: 0 },
+            invoices: { daily: 0, weekly: 0, monthly: 0, yearly: 0 }
+        };
+        
+        // Initialize counts
+        const counts = {
+            quotations: { daily: 0, weekly: 0, monthly: 0, yearly: 0 },
+            cashSales: { daily: 0, weekly: 0, monthly: 0, yearly: 0 },
+            invoices: { daily: 0, weekly: 0, monthly: 0, yearly: 0 }
+        };
+        
+        records.forEach(record => {
+            const recordDate = new Date(record.date || record.time);
+            const amount = record.amount || 0;
+            
+            // Determine record type
+            let type = 'other';
+            if (record.quotationNo && record.quotationNo.trim() !== '') {
+                type = 'quotations';
+            } else if (record.cashSaleNo && record.cashSaleNo.trim() !== '') {
+                type = 'cashSales';
+            } else if (record.invoiceNo && record.invoiceNo.trim() !== '') {
+                type = 'invoices';
+            }
+            
+            // Check time periods
+            if (recordDate >= today) {
+                totals[type].daily += amount;
+                counts[type].daily++;
+            }
+            
+            if (recordDate >= startOfWeek) {
+                totals[type].weekly += amount;
+                counts[type].weekly++;
+            }
+            
+            if (recordDate >= startOfMonth) {
+                totals[type].monthly += amount;
+                counts[type].monthly++;
+            }
+            
+            if (recordDate >= startOfYear) {
+                totals[type].yearly += amount;
+                counts[type].yearly++;
+            }
+        });
+        
+        res.json({
+            success: true,
+            data: {
+                totals,
+                counts,
+                updatedAt: new Date()
+            }
+        });
+        
+    } catch (error) {
+        console.error('[ERROR] Getting summary:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
 // Remove function to also remove sales
 exports.remove = async (req, res, next) => {
   try {
