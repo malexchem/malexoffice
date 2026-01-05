@@ -61,6 +61,7 @@ app.use('/api/salary-payments', require('./routes/salaryPayment.routes'));
 
 app.use('/api/customers', require('./routes/customer.routes'));
 app.use('/api/marketer-reports', require('./routes/marketerReport.routes'));
+app.use('/api/marketing-reports', require('./routes/marketingReport.routes'));
 
 /* ---------- time management routes ---------- */
 app.use('/api/time-records', require('./routes/timeRecord.routes'));
