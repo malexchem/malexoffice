@@ -564,7 +564,7 @@ exports.remove = async (req, res, next) => {
   }
 };
 
-exports.getAll = async (req, res, next) => {
+/*exports.getAll = async (req, res, next) => {
   try {
     const page = Math.max(parseInt(req.query.page) || 1, 1);
     const limit = Math.min(parseInt(req.query.limit) || 20, 100);
@@ -587,6 +587,59 @@ exports.getAll = async (req, res, next) => {
       total,
       hasMore,
       data: records
+    });
+
+  } catch (e) {
+    next(e);
+  }
+};*/
+
+exports.getAll = async (req, res, next) => {
+  try {
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const skip = (page - 1) * limit;
+
+    const [records, total] = await Promise.all([
+      Record.find()
+        .sort({ time: -1 })
+        .skip(skip)
+        .limit(limit),
+      Record.countDocuments()
+    ]);
+
+    const hasMore = skip + records.length < total;
+
+    // Transform records
+    const transformedRecords = records.map(record => {
+      const recordObj = record.toObject();
+      
+      // Combine date and time into ISO string
+      const datePart = new Date(recordObj.date);
+      const timePart = new Date(recordObj.time);
+      
+      const combinedDateTime = new Date(
+        datePart.getFullYear(),
+        datePart.getMonth(),
+        datePart.getDate(),
+        timePart.getHours(),
+        timePart.getMinutes(),
+        timePart.getSeconds()
+      );
+      
+      // Replace the date field with combined datetime
+      recordObj.date = combinedDateTime.toISOString();
+      
+      return recordObj;
+    });
+
+    res.json({
+      success: true,
+      page,
+      limit,
+      total,
+      hasMore,
+      data: transformedRecords
     });
 
   } catch (e) {
