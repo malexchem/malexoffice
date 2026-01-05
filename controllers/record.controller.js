@@ -564,7 +564,7 @@ exports.remove = async (req, res, next) => {
   }
 };
 
-/*exports.getAll = async (req, res, next) => {
+exports.getAll = async (req, res, next) => {
   try {
     const page = Math.max(parseInt(req.query.page) || 1, 1);
     const limit = Math.min(parseInt(req.query.limit) || 20, 100);
@@ -587,49 +587,6 @@ exports.remove = async (req, res, next) => {
       total,
       hasMore,
       data: records
-    });
-
-  } catch (e) {
-    next(e);
-  }
-};*/
-
-exports.getAll = async (req, res, next) => {
-  try {
-    const page = Math.max(parseInt(req.query.page) || 1, 1);
-    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
-    const skip = (page - 1) * limit;
-
-    const [records, total] = await Promise.all([
-      Record.find()
-        .sort({ dateTime: -1 })  // use dateTime instead of time
-        .skip(skip)
-        .limit(limit),
-      Record.countDocuments()
-    ]);
-
-    const hasMore = skip + records.length < total;
-
-    // Map records to include ONLY the datetime field the frontend should use
-    const mappedRecords = records.map(r => ({
-      id: r.id,
-      customerName: r.customerName,
-      invoiceNo: r.invoiceNo,
-      cashSaleNo: r.cashSaleNo,
-      quotationNo: r.quotationNo,
-      facilitator: r.facilitator,
-      amount: r.amount,
-      createdBy: r.createdBy,
-      dateTime: r.dateTime  // ✅ send this to frontend
-    }));
-
-    res.json({
-      success: true,
-      page,
-      limit,
-      total,
-      hasMore,
-      data: mappedRecords
     });
 
   } catch (e) {
