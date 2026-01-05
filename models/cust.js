@@ -10,7 +10,7 @@ const custSchema = new mongoose.Schema({
   },
   customerId: {
     type: String,
-    required: true,
+    required: false,
     unique: true,
     index: true
   },
