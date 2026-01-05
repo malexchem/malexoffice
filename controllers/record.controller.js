@@ -602,7 +602,7 @@ exports.getAll = async (req, res, next) => {
 
     const [records, total] = await Promise.all([
       Record.find()
-        .sort({ time: -1 })
+        .sort({ dateTime: -1 })  // use dateTime instead of time
         .skip(skip)
         .limit(limit),
       Record.countDocuments()
@@ -610,28 +610,18 @@ exports.getAll = async (req, res, next) => {
 
     const hasMore = skip + records.length < total;
 
-    // Transform records
-    const transformedRecords = records.map(record => {
-      const recordObj = record.toObject();
-      
-      // Combine date and time into ISO string
-      const datePart = new Date(recordObj.date);
-      const timePart = new Date(recordObj.time);
-      
-      const combinedDateTime = new Date(
-        datePart.getFullYear(),
-        datePart.getMonth(),
-        datePart.getDate(),
-        timePart.getHours(),
-        timePart.getMinutes(),
-        timePart.getSeconds()
-      );
-      
-      // Replace the date field with combined datetime
-      recordObj.date = combinedDateTime.toISOString();
-      
-      return recordObj;
-    });
+    // Map records to include ONLY the datetime field the frontend should use
+    const mappedRecords = records.map(r => ({
+      id: r.id,
+      customerName: r.customerName,
+      invoiceNo: r.invoiceNo,
+      cashSaleNo: r.cashSaleNo,
+      quotationNo: r.quotationNo,
+      facilitator: r.facilitator,
+      amount: r.amount,
+      createdBy: r.createdBy,
+      dateTime: r.dateTime  // ✅ send this to frontend
+    }));
 
     res.json({
       success: true,
@@ -639,7 +629,7 @@ exports.getAll = async (req, res, next) => {
       limit,
       total,
       hasMore,
-      data: transformedRecords
+      data: mappedRecords
     });
 
   } catch (e) {
