@@ -76,7 +76,7 @@ const recordSchema = new mongoose.Schema(
     // ✅ SINGLE source of truth for date & time (stored in UTC)
     dateTime: {
       type: Date,
-      required: true
+      required: false,
     },
 
     customerName: {
