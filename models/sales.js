@@ -164,6 +164,31 @@ salesSchema.index({ status: 1 });
   
   next();
 });*/
+// In your Sales model
+salesSchema.statics.createFromRecord = async function(record, additionalData = {}) {
+  const documentNumber = record.invoiceNo || record.cashSaleNo || record.quotationNo;
+  
+  if (!documentNumber) {
+    throw new Error('No document number found in record');
+  }
+  
+  const salesData = {
+    documentNumber,
+    customerName: record.customerName,
+    date: record.timestamp || record.time || record.date,
+    amount: record.amount,
+    totalAmount: record.amount,
+    facilitator: record.facilitator,
+    recordId: record.id,
+    documentType: record.documentType || 
+      (record.invoiceNo ? 'invoice' : 
+       record.cashSaleNo ? 'cashSale' : 'quotation'),
+    ...additionalData
+  };
+  
+  return this.create(salesData);
+};
+
 
 // models/sales.js - Update the pre-save middleware
 salesSchema.pre('save', function(next) {
