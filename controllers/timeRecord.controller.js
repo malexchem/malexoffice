@@ -4,7 +4,7 @@ const cloudinary = require('../config/cloudinary');
 
 // Expected schedule configuration
 const EXPECTED_SCHEDULE = {
-  'check-in': '07:30',
+  'check-in': '08:30',
   'lunch-out': '13:00',
   'lunch-in': '14:00',
   'check-out': '18:00'

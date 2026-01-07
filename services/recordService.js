@@ -1,3 +1,5 @@
+//record service
+
 const Record = require('../models/record');
 const RecordV2 = require('../models/recordV2');
 const Sales = require('../models/sales');
@@ -100,144 +102,13 @@ class RecordService {
     }
   }
 
-  /**
-   * Fetch records from both collections
-   */
-  /*static async getAllRecords(options = {}) {
-    const {
-      page = 1,
-      limit = 20,
-      type,
-      customer,
-      date: filterDate,
-      search,
-      startDate,
-      endDate
-    } = options;
-
-    const skip = (page - 1) * limit;
-    const limitPerCollection = Math.ceil(limit / 2);
-
-    // Build base queries
-    const baseQuery = {};
-    const v2Query = {};
-
-    // Apply filters to both queries
-    if (type) {
-      if (type === 'invoice') {
-        baseQuery.invoiceNo = { $exists: true, $ne: null };
-        v2Query.documentType = 'invoice';
-      } else if (type === 'cashSale') {
-        baseQuery.cashSaleNo = { $exists: true, $ne: null };
-        v2Query.documentType = 'cashSale';
-      } else if (type === 'quotation') {
-        baseQuery.quotationNo = { $exists: true, $ne: null };
-        v2Query.documentType = 'quotation';
-      }
-    }
-
-    if (customer && customer !== 'all') {
-      baseQuery.customerName = customer;
-      v2Query.customerName = customer;
-    }
-
-    if (filterDate) {
-      const startOfDay = new Date(filterDate);
-      const endOfDay = new Date(startOfDay);
-      endOfDay.setDate(endOfDay.getDate() + 1);
-      
-      baseQuery.time = { $gte: startOfDay, $lt: endOfDay };
-      v2Query.timestamp = { $gte: startOfDay, $lt: endOfDay };
-    }
-
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setDate(end.getDate() + 1);
-      
-      baseQuery.time = { $gte: start, $lt: end };
-      v2Query.timestamp = { $gte: start, $lt: end };
-    }
-
-    // Text search
-    if (search) {
-      const searchRegex = new RegExp(search, 'i');
-      baseQuery.$or = [
-        { customerName: searchRegex },
-        { invoiceNo: searchRegex },
-        { cashSaleNo: searchRegex },
-        { quotationNo: searchRegex },
-        { facilitator: searchRegex },
-        { createdBy: searchRegex }
-      ];
-      
-      v2Query.$or = [
-        { customerName: searchRegex },
-        { invoiceNo: searchRegex },
-        { cashSaleNo: searchRegex },
-        { quotationNo: searchRegex },
-        { facilitator: searchRegex },
-        { createdBy: searchRegex }
-      ];
-    }
-
-    // Fetch from both collections in parallel
-    const [legacyRecords, v2Records, legacyCount, v2Count] = await Promise.all([
-      Record.find(baseQuery)
-        .sort({ time: -1 })
-        .skip(skip)
-        .limit(limitPerCollection),
-      RecordV2.find(v2Query)
-        .sort({ timestamp: -1 })
-        .skip(skip)
-        .limit(limitPerCollection),
-      Record.countDocuments(baseQuery),
-      RecordV2.countDocuments(v2Query)
-    ]);
-
-    // Normalize legacy records to match V2 format
-    const normalizedLegacy = legacyRecords.map(record => this.normalizeRecord(record));
-    
-    // Combine and sort by date (newest first)
-    const allRecords = [...normalizedLegacy, ...v2Records];
-    allRecords.sort((a, b) => {
-      const dateA = a.timestamp || a.time;
-      const dateB = b.timestamp || b.time;
-      return new Date(dateB) - new Date(dateA);
-    });
-
-    // Apply pagination
-    const paginatedRecords = allRecords.slice(0, limit);
-    const totalRecords = legacyCount + v2Count;
-    const hasMore = skip + paginatedRecords.length < totalRecords;
-
-    return {
-      records: paginatedRecords,
-      total: totalRecords,
-      page,
-      limit,
-      hasMore,
-      counts: {
-        legacy: legacyCount,
-        v2: v2Count
-      }
-    };
-  }*/
-
     static async getAllRecords(options = {}) {
     console.log('=== RECORD SERVICE: GET ALL RECORDS START ===');
     console.log('Options:', options);
     
     const {
       page = 1,
-      limit = 20,
-      type,
-      customer,
-      date: filterDate,
-      search,
-      startDate,
-      endDate
-    } = options;
+      limit = 20    } = options;
 
     const skip = (page - 1) * limit;
     const limitPerCollection = Math.ceil(limit / 2);
@@ -315,37 +186,6 @@ class RecordService {
     };
   }
 
-  /**
-   * Normalize legacy record to match V2 format
-   */
-  /*static normalizeRecord(record) {
-    if (record.version === 2) return record.toObject();
-    
-    const recordObj = record.toObject ? record.toObject() : record;
-    const date = new Date(recordObj.time || recordObj.date);
-    
-    // Extract date and time components
-    const dateStr = date.toISOString().split('T')[0];
-    const timeStr = date.toTimeString().slice(0, 5);
-    
-    // Determine document type
-    let documentType = 'invoice';
-    if (recordObj.cashSaleNo) documentType = 'cashSale';
-    if (recordObj.quotationNo) documentType = 'quotation';
-    
-    return {
-      ...recordObj,
-      date: dateStr,
-      time: timeStr,
-      timestamp: date,
-      documentType,
-      version: 1
-    };
-  }*/
-
-    /**
- * Normalize legacy record to match V2 format
- */
 static normalizeRecord(record) {
   if (record.version === 2) return record.toObject();
   
@@ -561,85 +401,6 @@ static normalizeRecord(record) {
     }
   }
 
-  /**
-   * Get summary statistics from both collections
-   */
-  /*static async getSummary() {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay() + 1);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    
-    // Fetch all records for summary (consider pagination for large datasets)
-    const [legacyRecords, v2Records] = await Promise.all([
-      Record.find({}),
-      RecordV2.find({})
-    ]);
-    
-    // Normalize legacy records
-    const allRecords = [
-      ...legacyRecords.map(r => this.normalizeRecord(r)),
-      ...v2Records
-    ];
-    
-    // Initialize totals
-    const totals = {
-      quotations: { daily: 0, weekly: 0, monthly: 0, yearly: 0 },
-      cashSales: { daily: 0, weekly: 0, monthly: 0, yearly: 0 },
-      invoices: { daily: 0, weekly: 0, monthly: 0, yearly: 0 }
-    };
-    
-    // Initialize counts
-    const counts = {
-      quotations: { daily: 0, weekly: 0, monthly: 0, yearly: 0 },
-      cashSales: { daily: 0, weekly: 0, monthly: 0, yearly: 0 },
-      invoices: { daily: 0, weekly: 0, monthly: 0, yearly: 0 }
-    };
-    
-    allRecords.forEach(record => {
-      const recordDate = new Date(record.timestamp || record.time);
-      const amount = record.amount || 0;
-      
-      // Determine record type
-      const type = record.documentType || 
-        (record.quotationNo ? 'quotations' : 
-         record.cashSaleNo ? 'cashSales' : 'invoices');
-      
-      // Check time periods
-      if (recordDate >= today) {
-        totals[type].daily += amount;
-        counts[type].daily++;
-      }
-      
-      if (recordDate >= startOfWeek) {
-        totals[type].weekly += amount;
-        counts[type].weekly++;
-      }
-      
-      if (recordDate >= startOfMonth) {
-        totals[type].monthly += amount;
-        counts[type].monthly++;
-      }
-      
-      if (recordDate >= startOfYear) {
-        totals[type].yearly += amount;
-        counts[type].yearly++;
-      }
-    });
-    
-    return {
-      totals,
-      counts,
-      totalRecords: allRecords.length,
-      updatedAt: new Date()
-    };
-  }*/
-
-    /**
- * Get summary statistics from both collections
- */
 static async getSummary() {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
