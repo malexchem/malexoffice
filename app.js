@@ -69,6 +69,7 @@ app.use('/api/sales', require('./routes/sales.routes'));
 // In your main app.js, add this line with other routes:
 app.use('/api/cash-collections', require('./routes/cashCollection.routes'));
 app.use('/api/cust', require('./routes/cust.routes'));
+app.use('/api/inventory', require('./routes/InventoryRoutes'));
 
 
 /* ---------- catch-all ---------- */
