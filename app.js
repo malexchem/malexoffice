@@ -49,6 +49,7 @@ app.post('/api/users/createByAdmin', async (req, res, next) => {
 /* ---------- other routes ---------- */
 app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/records', require('./routes/record.routes'));
+app.use('/api/records-two', require('./routes/record.routes2'));
 app.use('/api/expenses', require('./routes/expense.routes'));
 app.use('/api/deposits', require('./routes/deposit.routes'));
 app.use('/api/transactions', require('./routes/transaction.routes'));
