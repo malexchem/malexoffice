@@ -25,7 +25,7 @@ class RecordService {
   /**
    * Create a new record in appropriate collection
    */
-  static async createRecord(recordData) {
+  /*static async createRecord(recordData) {
     const {
       date,
       time,
@@ -100,7 +100,104 @@ class RecordService {
       
       return savedRecord;
     }
+  }*/
+
+    /**
+ * Create a new record in appropriate collection
+ * Ensures document numbers are unique
+ */
+static async createRecord(recordData) {
+  const {
+    date,
+    time,
+    customerName,
+    invoiceNo,
+    cashSaleNo,
+    quotationNo,
+    facilitator,
+    amount,
+    createdBy
+  } = recordData;
+
+  // Determine which model to use
+  const useV2 = this.shouldUseV2(date);
+
+  // Determine document type
+  let documentType = 'invoice';
+  let documentNumber = invoiceNo || cashSaleNo || quotationNo;
+  if (cashSaleNo) documentType = 'cashSale';
+  if (quotationNo) documentType = 'quotation';
+
+  // Check if record with this document number already exists
+  const Model = useV2 ? RecordV2 : Record;
+  const query = {};
+  if (invoiceNo) query.invoiceNo = invoiceNo;
+  if (cashSaleNo) query.cashSaleNo = cashSaleNo;
+  if (quotationNo) query.quotationNo = quotationNo;
+
+  const existingRecord = await Model.findOne(query);
+  if (existingRecord) {
+    // Return existing record if it already exists
+    return useV2 ? this.normalizeRecord(existingRecord) : existingRecord;
   }
+
+  // Generate ID
+  const recordId = uuidv4();
+
+  if (useV2) {
+    // Create in RecordV2
+    const timestamp = RecordV2.createTimestamp(date, time);
+
+    const newRecord = new RecordV2({
+      id: recordId,
+      date,
+      time,
+      timestamp,
+      customerName,
+      invoiceNo,
+      cashSaleNo,
+      quotationNo,
+      documentType,
+      facilitator,
+      amount,
+      createdBy,
+      version: 2
+    });
+
+    const savedRecord = await newRecord.save();
+
+    // Create sales entry
+    await this.createSalesEntry(savedRecord);
+
+    return this.normalizeRecord(savedRecord);
+  } else {
+    // Create in Record (legacy)
+    const combinedDate = new Date(`${date}T${time}:00`);
+
+    const newRecord = new Record({
+      id: recordId,
+      date: combinedDate,
+      time: combinedDate,
+      customerName,
+      invoiceNo,
+      cashSaleNo,
+      quotationNo,
+      documentType,
+      facilitator,
+      amount,
+      createdBy,
+      createdAt: new Date()
+    });
+
+    const savedRecord = await newRecord.save();
+
+    // Create sales entry
+    await this.createSalesEntry(savedRecord);
+
+    return savedRecord;
+  }
+}
+
 
     static async getAllRecords(options = {}) {
     console.log('=== RECORD SERVICE: GET ALL RECORDS START ===');

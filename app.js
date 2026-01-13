@@ -72,6 +72,8 @@ app.use('/api/cash-collections', require('./routes/cashCollection.routes'));
 app.use('/api/cust', require('./routes/cust.routes'));
 app.use('/api/inventory', require('./routes/InventoryRoutes'));
 
+app.use('/api/records-three', require('./routes/recordsThree'));
+
 
 /* ---------- catch-all ---------- */
 app.use(errorHandler);
