@@ -53,6 +53,9 @@ app.use('/api/records-two', require('./routes/record.routes2'));
 app.use('/api/expenses', require('./routes/expense.routes'));
 app.use('/api/deposits', require('./routes/deposit.routes'));
 app.use('/api/transactions', require('./routes/transaction.routes'));
+app.use('/api/clean', require('./routes/cleanRoutes'));
+app.use('/api/clean/today', require('./routes/cleanRoutes'));
+
 
 /* ---------- salary routes ---------- */
 app.use('/api/employees', require('./routes/employee.routes'));
