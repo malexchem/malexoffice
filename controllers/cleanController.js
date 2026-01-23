@@ -89,7 +89,7 @@ const getAllCleanRecords = async (req, res) => {
 };
 
 // POST /api/clean - Create a new clean record
-const createCleanRecord = async (req, res) => {
+/*const createCleanRecord = async (req, res) => {
   try {
     // Validate required fields
     const requiredFields = [
@@ -117,16 +117,20 @@ const createCleanRecord = async (req, res) => {
       });
     }
 
-    // Check if documentNo already exists (if provided)
     if (req.body.documentNo) {
-      const existingRecord = await Clean.findOne({ documentNo: req.body.documentNo });
+      const existingRecord = await Clean.findOne({
+        documentType: req.body.documentType,
+        documentNo: req.body.documentNo
+      });
+
       if (existingRecord) {
         return res.status(400).json({
           success: false,
-          message: `Document number ${req.body.documentNo} already exists`
+          message: `Document number ${req.body.documentNo} already exists for ${req.body.documentType}`
         });
       }
     }
+
 
     // Create new record
     const cleanRecord = new Clean(req.body);
@@ -165,7 +169,103 @@ const createCleanRecord = async (req, res) => {
       error: error.message
     });
   }
+};*/
+
+const createCleanRecord = async (req, res) => {
+  try {
+    // ✅ Strict required fields
+    const requiredFields = [
+      'documentType',       // must be INVOICE, CASH_SALE, QUOTATION
+      'documentNo',         // must exist
+      'customerName',       // must exist
+      'amount',             // must exist and be number
+      'facilitator',        // must exist
+      'createdBy',          // must exist
+      'created_time_utc',
+      'created_time_nairobi',
+      'createdAt_date',
+      'createdAt_text',
+      'created_year',
+      'created_month',
+      'created_day'
+    ];
+
+    // Check for missing fields
+    const missingFields = requiredFields.filter(field => {
+      // treat empty string or null or undefined as missing
+      const val = req.body[field];
+      return val === undefined || val === null || (typeof val === 'string' && val.trim() === '');
+    });
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Missing required fields: ${missingFields.join(', ')}`
+      });
+    }
+
+    // Validate documentType enum
+    const validDocumentTypes = ['INVOICE', 'CASH_SALE', 'QUOTATION'];
+    if (!validDocumentTypes.includes(req.body.documentType)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid documentType. Must be one of: ${validDocumentTypes.join(', ')}`
+      });
+    }
+
+    // Check if documentNo already exists for the same type
+    const existingRecord = await Clean.findOne({
+      documentType: req.body.documentType,
+      documentNo: req.body.documentNo
+    });
+
+    if (existingRecord) {
+      return res.status(400).json({
+        success: false,
+        message: `Document number ${req.body.documentNo} already exists for ${req.body.documentType}`
+      });
+    }
+
+    // ✅ Create the record
+    const cleanRecord = new Clean(req.body);
+    await cleanRecord.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Clean record created successfully",
+      record: cleanRecord
+    });
+
+  } catch (error) {
+    console.error("Error creating clean record:", error);
+
+    // Duplicate key error (documentType + documentNo)
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Document number must be unique per document type",
+        error: error.message
+      });
+    }
+
+    // Mongoose validation errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        error: error.message
+      });
+    }
+
+    // Other server errors
+    res.status(500).json({
+      success: false,
+      message: "Server error creating clean record",
+      error: error.message
+    });
+  }
 };
+
 
 // GET /api/clean/today - Get today's records
 const getTodayCleanRecords = async (req, res) => {
