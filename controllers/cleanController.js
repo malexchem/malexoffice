@@ -564,7 +564,7 @@ const getFilteredCleanRecords = async (dateRange, req, res) => {
 };
 
 // GET /api/clean - Get all records with pagination
-const getAllCleanRecords = async (req, res) => {
+/*const getAllCleanRecords = async (req, res) => {
     try {
         // Get page & limit from query params, defaults
         const page = parseInt(req.query.page) || 1;
@@ -587,6 +587,95 @@ const getAllCleanRecords = async (req, res) => {
             totalRecords,
             totalPages: Math.ceil(totalRecords / limit),
             records,
+        });
+    } catch (err) {
+        console.error("Error fetching Clean records:", err);
+        res.status(500).json({
+            success: false,
+            message: "Server Error fetching Clean records",
+            error: err.message,
+        });
+    }
+};*/
+
+// In your cleanController.js, update the getAllCleanRecords function:
+
+const getAllCleanRecords = async (req, res) => {
+    try {
+        // Get page & limit from query params, defaults
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 100;
+        const skip = (page - 1) * limit;
+
+        // Total count (for frontend pagination)
+        const totalRecords = await Clean.countDocuments();
+
+        // Fetch records with pagination
+        const records = await Clean.find()
+            .sort({ createdAt_date: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        // Get statistics for ALL records
+        const stats = await Clean.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: { $sum: "$amount" },
+                    invoiceCount: {
+                        $sum: { $cond: [{ $eq: ["$documentType", "INVOICE"] }, 1, 0] }
+                    },
+                    cashSaleCount: {
+                        $sum: { $cond: [{ $eq: ["$documentType", "CASH_SALE"] }, 1, 0] }
+                    },
+                    quotationCount: {
+                        $sum: { $cond: [{ $eq: ["$documentType", "QUOTATION"] }, 1, 0] }
+                    },
+                    // Additional breakdown by document type for amount
+                    invoiceAmount: {
+                        $sum: { $cond: [{ $eq: ["$documentType", "INVOICE"] }, "$amount", 0] }
+                    },
+                    cashSaleAmount: {
+                        $sum: { $cond: [{ $eq: ["$documentType", "CASH_SALE"] }, "$amount", 0] }
+                    },
+                    quotationAmount: {
+                        $sum: { $cond: [{ $eq: ["$documentType", "QUOTATION"] }, "$amount", 0] }
+                    }
+                }
+            }
+        ]);
+
+        const resultStats = stats[0] || {
+            totalAmount: 0,
+            invoiceCount: 0,
+            cashSaleCount: 0,
+            quotationCount: 0,
+            invoiceAmount: 0,
+            cashSaleAmount: 0,
+            quotationAmount: 0
+        };
+
+        res.status(200).json({
+            success: true,
+            page,
+            limit,
+            totalRecords,
+            totalPages: Math.ceil(totalRecords / limit),
+            records,
+            stats: {
+                totalAmount: resultStats.totalAmount || 0,
+                invoiceCount: resultStats.invoiceCount || 0,
+                cashSaleCount: resultStats.cashSaleCount || 0,
+                quotationCount: resultStats.quotationCount || 0,
+                invoiceAmount: resultStats.invoiceAmount || 0,
+                cashSaleAmount: resultStats.cashSaleAmount || 0,
+                quotationAmount: resultStats.quotationAmount || 0
+            },
+            dateFilter: {
+                dateLabel: "All Records",
+                startTimestamp: null,
+                endTimestamp: null
+            }
         });
     } catch (err) {
         console.error("Error fetching Clean records:", err);
