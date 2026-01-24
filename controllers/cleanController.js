@@ -1,42 +1,4 @@
-/*const Clean = require("../models/recordsClean");
 
-// GET /api/clean
-// Supports pagination: ?page=1&limit=100
-const getAllCleanRecords = async (req, res) => {
-  try {
-    // Get page & limit from query params, defaults
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 100; // default 100 records per request
-    const skip = (page - 1) * limit;
-
-    // Total count (for frontend pagination)
-    const totalRecords = await Clean.countDocuments();
-
-    // Fetch records with pagination
-    const records = await Clean.find()
-      .sort({ createdAt_date: -1 }) // latest first
-      .skip(skip)
-      .limit(limit);
-
-    res.status(200).json({
-      success: true,
-      page,
-      limit,
-      totalRecords,
-      totalPages: Math.ceil(totalRecords / limit),
-      records,
-    });
-  } catch (err) {
-    console.error("Error fetching Clean records:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error fetching Clean records",
-      error: err.message,
-    });
-  }
-};
-
-module.exports = { getAllCleanRecords };*/
 
 // controllers/cleanController.js
 const Clean = require("../models/recordsClean");
@@ -87,89 +49,6 @@ const getAllCleanRecords = async (req, res) => {
     });
   }
 };
-
-// POST /api/clean - Create a new clean record
-/*const createCleanRecord = async (req, res) => {
-  try {
-    // Validate required fields
-    const requiredFields = [
-      'documentType', 'amount', 'created_time_utc',
-      'created_time_nairobi', 'createdAt_date', 'createdAt_text',
-      'created_year', 'created_month', 'created_day',
-      'createdBy', 'customerName', 'facilitator'
-    ];
-
-    const missingFields = requiredFields.filter(field => !req.body[field]);
-    
-    if (missingFields.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: `Missing required fields: ${missingFields.join(', ')}`
-      });
-    }
-
-    // Validate documentType enum
-    const validDocumentTypes = ['INVOICE', 'CASH_SALE', 'QUOTATION'];
-    if (!validDocumentTypes.includes(req.body.documentType)) {
-      return res.status(400).json({
-        success: false,
-        message: `Invalid documentType. Must be one of: ${validDocumentTypes.join(', ')}`
-      });
-    }
-
-    if (req.body.documentNo) {
-      const existingRecord = await Clean.findOne({
-        documentType: req.body.documentType,
-        documentNo: req.body.documentNo
-      });
-
-      if (existingRecord) {
-        return res.status(400).json({
-          success: false,
-          message: `Document number ${req.body.documentNo} already exists for ${req.body.documentType}`
-        });
-      }
-    }
-
-
-    // Create new record
-    const cleanRecord = new Clean(req.body);
-    await cleanRecord.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Clean record created successfully",
-      record: cleanRecord
-    });
-
-  } catch (error) {
-    console.error("Error creating clean record:", error);
-    
-    // Handle duplicate key error (for documentNo)
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: "Document number must be unique",
-        error: error.message
-      });
-    }
-
-    // Handle validation errors
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        success: false,
-        message: "Validation error",
-        error: error.message
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: "Server error creating clean record",
-      error: error.message
-    });
-  }
-};*/
 
 const createCleanRecord = async (req, res) => {
   try {
@@ -352,8 +231,160 @@ const getTodayCleanRecords = async (req, res) => {
     }
 };
 
+// GET /api/clean/:id - Get single record by ID
+const getCleanRecordById = async (req, res) => {
+  try {
+    const record = await Clean.findById(req.params.id);
+    
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        message: "Record not found"
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      record
+    });
+  } catch (err) {
+    console.error("Error fetching clean record:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server Error fetching record",
+      error: err.message,
+    });
+  }
+};
+
+// PUT /api/clean/:id - Update a clean record
+const updateCleanRecord = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    
+    // Remove _id from update data to prevent modification
+    delete updateData._id;
+    
+    // Check if record exists
+    const existingRecord = await Clean.findById(id);
+    if (!existingRecord) {
+      return res.status(404).json({
+        success: false,
+        message: "Record not found"
+      });
+    }
+    
+    // If documentNo is being changed, check for duplicates
+    if (updateData.documentNo && 
+        updateData.documentNo !== existingRecord.documentNo &&
+        updateData.documentType === existingRecord.documentType) {
+      
+      const duplicateRecord = await Clean.findOne({
+        documentType: updateData.documentType,
+        documentNo: updateData.documentNo,
+        _id: { $ne: id } // Exclude current record
+      });
+      
+      if (duplicateRecord) {
+        return res.status(400).json({
+          success: false,
+          message: `Document number ${updateData.documentNo} already exists for ${updateData.documentType}`
+        });
+      }
+    }
+    
+    // Validate documentType if provided
+    if (updateData.documentType) {
+      const validDocumentTypes = ['INVOICE', 'CASH_SALE', 'QUOTATION'];
+      if (!validDocumentTypes.includes(updateData.documentType)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid documentType. Must be one of: ${validDocumentTypes.join(', ')}`
+        });
+      }
+    }
+    
+    // Update the record
+    const updatedRecord = await Clean.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { 
+        new: true, // Return updated document
+        runValidators: true // Run schema validators
+      }
+    );
+    
+    res.status(200).json({
+      success: true,
+      message: "Record updated successfully",
+      record: updatedRecord
+    });
+    
+  } catch (error) {
+    console.error("Error updating clean record:", error);
+    
+    // Handle duplicate key error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Document number must be unique per document type",
+        error: error.message
+      });
+    }
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        error: error.message
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: "Server error updating record",
+      error: error.message
+    });
+  }
+};
+
+// DELETE /api/clean/:id - Delete a clean record
+const deleteCleanRecord = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const record = await Clean.findByIdAndDelete(id);
+    
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        message: "Record not found"
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: "Record deleted successfully",
+      record
+    });
+    
+  } catch (error) {
+    console.error("Error deleting clean record:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error deleting record",
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllCleanRecords,
   createCleanRecord,
-  getTodayCleanRecords
+  getTodayCleanRecords,
+  getCleanRecordById,      
+  updateCleanRecord,       
+  deleteCleanRecord        
 };

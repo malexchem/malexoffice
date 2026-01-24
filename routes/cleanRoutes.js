@@ -14,7 +14,10 @@ const express = require("express");
 const { 
     getAllCleanRecords,
     createCleanRecord,
-    getTodayCleanRecords 
+    getTodayCleanRecords ,
+    getCleanRecordById,
+    updateCleanRecord,
+    deleteCleanRecord
 } = require("../controllers/cleanController");
 
 const router = express.Router();
@@ -27,5 +30,17 @@ router.get("/today", getTodayCleanRecords);
 
 // POST /api/clean - Create a new clean record
 router.post("/", createCleanRecord);
+
+// GET /api/clean/:id - Get single record
+router.get("/:id", getCleanRecordById);
+
+// POST /api/clean - Create a new clean record
+router.post("/", createCleanRecord);
+
+// PUT /api/clean/:id - Update a clean record
+router.put("/:id", updateCleanRecord);
+
+// DELETE /api/clean/:id - Delete a clean record
+router.delete("/:id", deleteCleanRecord);
 
 module.exports = router;
