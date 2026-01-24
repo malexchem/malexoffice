@@ -1,16 +1,5 @@
 // routes/cleanRoutes.js
-//const express = require("express");
-//const { getAllCleanRecords } = require("../controllers/cleanController"); 
-
-//const router = express.Router();
-
-//router.get("/", getAllCleanRecords);
-
-//module.exports = router;
-
-
-// routes/cleanRoutes.js
-const express = require("express");
+/*const express = require("express");
 const { 
     getAllCleanRecords,
     createCleanRecord,
@@ -41,6 +30,47 @@ router.post("/", createCleanRecord);
 router.put("/:id", updateCleanRecord);
 
 // DELETE /api/clean/:id - Delete a clean record
+router.delete("/:id", deleteCleanRecord);
+
+module.exports = router;*/
+
+// routes/cleanRoutes.js
+const express = require("express");
+const { 
+    getAllCleanRecords,
+    createCleanRecord,
+    getTodayCleanRecords,
+    getYesterdayCleanRecords,
+    getThisWeekCleanRecords,
+    getThisMonthCleanRecords,
+    getThisYearCleanRecords,
+    getLast7DaysCleanRecords,
+    getLast30DaysCleanRecords,
+    getCustomDateRangeCleanRecords,
+    getCleanRecordById,
+    updateCleanRecord,
+    deleteCleanRecord
+} = require("../controllers/cleanController");
+
+const router = express.Router();
+
+// GET /api/clean - Get all records with pagination
+router.get("/", getAllCleanRecords);
+
+// Time-based filter routes
+router.get("/today", getTodayCleanRecords);
+router.get("/yesterday", getYesterdayCleanRecords);
+router.get("/this-week", getThisWeekCleanRecords);
+router.get("/this-month", getThisMonthCleanRecords);
+router.get("/this-year", getThisYearCleanRecords);
+router.get("/last-7-days", getLast7DaysCleanRecords);
+router.get("/last-30-days", getLast30DaysCleanRecords);
+router.get("/custom", getCustomDateRangeCleanRecords);
+
+// CRUD operations
+router.post("/", createCleanRecord);
+router.get("/:id", getCleanRecordById);
+router.put("/:id", updateCleanRecord);
 router.delete("/:id", deleteCleanRecord);
 
 module.exports = router;
